@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>BASIT HOST - Console</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0e14;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            opacity: 0.06;
+        }
+        .matrix-bg span {
+            position: absolute;
+            font-size: 14px;
+            color: #00ff88;
+            animation: matrixDrop linear infinite;
+            white-space: nowrap;
+        }
+        @keyframes matrixDrop {
+            0% { transform: translateY(-100vh); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            border-bottom: 2px solid rgba(0, 255, 136, 0.15);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .logo {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 0 40px rgba(0, 255, 136, 0.2);
+        }
+        .header .logo span { color: #ffffff; opacity: 0.3; font-weight: 300; }
+
+        .header .back-btn {
+            background: rgba(0, 255, 136, 0.06);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            padding: 8px 22px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        .header .back-btn:hover { background: rgba(0, 255, 136, 0.12); }
+
+        .header .server-info {
+            font-size: 14px;
+            opacity: 0.6;
+            letter-spacing: 1px;
+        }
+        .header .server-info strong { color: #00ff88; opacity: 1; }
+
+        .console-container {
+            background: rgba(10, 14, 20, 0.92);
+            border: 2px solid rgba(0, 255, 136, 0.12);
+            border-radius: 16px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            min-height: 400px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .console-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .console-container::-webkit-scrollbar-track {
+            background: rgba(0, 255, 136, 0.05);
+            border-radius: 4px;
+        }
+        .console-container::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 136, 0.3);
+            border-radius: 4px;
+        }
+
+        .console-line {
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.03);
+            animation: consoleFade 0.3s ease;
+        }
+        .console-line .timestamp {
+            color: rgba(0, 255, 136, 0.3);
+            margin-right: 12px;
+        }
+        .console-line .output { color: #00ff88; }
+        .console-line .output.error { color: #ff4757; }
+        .console-line .output.warning { color: #ffbd2e; }
+        .console-line .output.input { color: #4488ff; }
+
+        @keyframes consoleFade {
+            0% { opacity: 0; transform: translateX(-10px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        .console-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 20px auto;
+            max-width: 1200px;
+            position: relative;
+            z-index: 1;
+        }
+        .console-actions button {
+            background: rgba(0, 255, 136, 0.06);
+            border: 2px solid rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            padding: 12px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            flex: 1;
+            max-width: 180px;
+        }
+        .console-actions button:hover {
+            background: rgba(0, 255, 136, 0.12);
+            border-color: #00ff88;
+        }
+        .console-actions button.danger {
+            border-color: rgba(255, 71, 87, 0.3);
+            color: #ff4757;
+        }
+        .console-actions button.danger:hover {
+            background: rgba(255, 71, 87, 0.15);
+            border-color: #ff4757;
+        }
+        .console-actions button.success {
+            border-color: rgba(0, 255, 136, 0.4);
+            color: #00ff88;
+        }
+        .console-actions button.success:hover {
+            background: rgba(0, 255, 136, 0.15);
+        }
+
+        .console-status {
+            text-align: center;
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin: 10px auto;
+            max-width: 1200px;
+            position: relative;
+            z-index: 1;
+        }
+        .console-status .status-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .status-dot.running {
+            background: #00ff88;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+        .status-dot.stopped {
+            background: #ff4757;
+            box-shadow: 0 0 30px rgba(255, 71, 87, 0.3);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10,14,20,0.95);
+            border: 2px solid rgba(0,255,136,0.2);
+            color: #00ff88;
+            padding: 16px 35px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            letter-spacing: 1px;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            max-width: 1200px;
+            margin: 15px auto;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .upload-area input[type="file"] {
+            background: rgba(0, 255, 136, 0.04);
+            border: 2px dashed rgba(0, 255, 136, 0.2);
+            border-radius: 10px;
+            padding: 12px 20px;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            flex: 1;
+            min-width: 200px;
+        }
+        .upload-area button {
+            background: rgba(0, 255, 136, 0.06);
+            border: 2px solid rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            padding: 12px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+        .upload-area button:hover {
+            background: rgba(0, 255, 136, 0.12);
+            border-color: #00ff88;
+        }
+
+        @media (max-width: 768px) {
+            .header { flex-direction: column; align-items: stretch; text-align: center; }
+            .console-actions button { max-width: 100%; }
+            .upload-area { flex-direction: column; }
+            .upload-area input[type="file"] { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="matrix-bg" id="matrixBg"></div>
+
+    <div class="header">
+        <div class="logo">𝗕𝗔𝗦𝗜𝗧 𝗛𝗢𝗦𝗧 <span>// CONSOLE</span></div>
+        <div class="server-info" id="serverInfo">Server: <strong id="serverNameDisplay">Loading...</strong></div>
+        <button class="back-btn" onclick="goBack()">⬅ BACK</button>
+    </div>
+
+    <div class="console-status" id="consoleStatus">
+        <span class="status-dot stopped" id="statusDot"></span>
+        <span id="statusText">STOPPED</span>
+    </div>
+
+    <div class="console-actions">
+        <button class="success" id="startBtn" onclick="startServer()">▶ START</button>
+        <button id="stopBtn" onclick="stopServer()">⏹ STOP</button>
+        <button id="restartBtn" onclick="restartServer()">🔄 RESTART</button>
+        <button class="danger" onclick="clearConsole()">🗑 CLEAR</button>
+    </div>
+
+    <div class="upload-area">
+        <input type="file" id="fileUpload" accept=".py,.js,.zip" />
+        <button onclick="uploadFile()">📤 UPLOAD FILE</button>
+    </div>
+
+    <div class="console-container" id="consoleContainer"></div>
+
+    <script>
+        // Matrix Rain
+        (function() {
+            const bg = document.getElementById('matrixBg');
+            const chars = '0123456789ABCDEF';
+            for (let i = 0; i < 80; i++) {
+                const span = document.createElement('span');
+                span.textContent = chars[Math.floor(Math.random() * chars.length)];
+                span.style.left = Math.random() * 100 + '%';
+                span.style.fontSize = (10 + Math.random() * 20) + 'px';
+                span.style.animationDuration = (5 + Math.random() * 15) + 's';
+                span.style.animationDelay = (Math.random() * 15) + 's';
+                span.style.opacity = 0.3 + Math.random() * 0.5;
+                bg.appendChild(span);
+            }
+        })();
+
+        // Get server ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const serverId = parseInt(urlParams.get('id'));
+
+        let server = null;
+        let isRunning = false;
+        let logInterval = null;
+
+        function loadServer() {
+            fetch('/api/servers')
+                .then(res => res.json())
+                .then(servers => {
+                    server = servers.find(s => s.id === serverId);
+                    if (server) {
+                        document.getElementById('serverNameDisplay').textContent = server.name;
+                        isRunning = server.status === 'running';
+                        updateStatus();
+                        if (isRunning) {
+                            addConsoleLine('🟢 System', 'Server is running!', 'output');
+                            startLogPolling();
+                        } else {
+                            addConsoleLine('🔴 System', 'Server is stopped. Click START to begin.', 'warning');
+                        }
+                    } else {
+                        document.getElementById('serverNameDisplay').textContent = 'Not Found';
+                        addConsoleLine('❌ Error', 'Server not found!', 'error');
+                    }
+                })
+                .catch(err => {
+                    addConsoleLine('❌ Error', 'Failed to load server: ' + err.message, 'error');
+                });
+        }
+
+        function updateStatus() {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            if (isRunning) {
+                dot.className = 'status-dot running';
+                text.textContent = 'RUNNING';
+                text.style.color = '#00ff88';
+            } else {
+                dot.className = 'status-dot stopped';
+                text.textContent = 'STOPPED';
+                text.style.color = '#ff4757';
+            }
+        }
+
+        function addConsoleLine(timestamp, message, type = 'output') {
+            const container = document.getElementById('consoleContainer');
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            const time = new Date().toLocaleTimeString();
+            line.innerHTML = `
+                <span class="timestamp">[${time}]</span>
+                <span class="${type}">${message}</span>
+            `;
+            container.appendChild(line);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function startLogPolling() {
+            if (logInterval) clearInterval(logInterval);
+            logInterval = setInterval(() => {
+                fetch(`/api/logs/${serverId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.logs && data.logs.length > 0) {
+                            data.logs.forEach(log => {
+                                const type = log.type === 'error' ? 'error' : 'output';
+                                addConsoleLine('📝 Log', log.line, type);
+                            });
+                        }
+                    })
+                    .catch(() => {});
+            }, 3000);
+        }
+
+        function startServer() {
+            if (isRunning) {
+                showToast('⚠️ Server is already running!');
+                return;
+            }
+
+            addConsoleLine('🔄 System', 'Starting server...', 'warning');
+
+            fetch(`/api/start/${serverId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        addConsoleLine('❌ Error', data.error, 'error');
+                        showToast('❌ ' + data.error);
+                        return;
+                    }
+                    isRunning = true;
+                    updateStatus();
+                    addConsoleLine('✅ System', data.message, 'output');
+                    showToast('✅ Server started!');
+                    startLogPolling();
+                })
+                .catch(err => {
+                    addConsoleLine('❌ Error', err.message, 'error');
+                    showToast('❌ ' + err.message);
+                });
+        }
+
+        function stopServer() {
+            if (!isRunning) {
+                showToast('⚠️ Server is already stopped!');
+                return;
+            }
+
+            addConsoleLine('🔄 System', 'Stopping server...', 'warning');
+
+            fetch(`/api/stop/${serverId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        addConsoleLine('❌ Error', data.error, 'error');
+                        showToast('❌ ' + data.error);
+                        return;
+                    }
+                    isRunning = false;
+                    updateStatus();
+                    addConsoleLine('⏹ System', data.message, 'output');
+                    showToast('⏹ Server stopped!');
+                    if (logInterval) clearInterval(logInterval);
+                })
+                .catch(err => {
+                    addConsoleLine('❌ Error', err.message, 'error');
+                    showToast('❌ ' + err.message);
+                });
+        }
+
+        function restartServer() {
+            addConsoleLine('🔄 System', 'Restarting server...', 'warning');
+
+            fetch(`/api/restart/${serverId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        addConsoleLine('❌ Error', data.error, 'error');
+                        showToast('❌ ' + data.error);
+                        return;
+                    }
+                    isRunning = true;
+                    updateStatus();
+                    addConsoleLine('✅ System', data.message, 'output');
+                    showToast('🔄 Server restarted!');
+                    if (logInterval) clearInterval(logInterval);
+                    startLogPolling();
+                })
+                .catch(err => {
+                    addConsoleLine('❌ Error', err.message, 'error');
+                    showToast('❌ ' + err.message);
+                });
+        }
+
+        function uploadFile() {
+            const fileInput = document.getElementById('fileUpload');
+            const file = fileInput.files[0];
+            if (!file) {
+                showToast('❌ Please select a file!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            addConsoleLine('📤 Upload', `Uploading ${file.name}...`, 'warning');
+
+            fetch(`/api/upload/${serverId}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    addConsoleLine('❌ Error', data.error, 'error');
+                    showToast('❌ ' + data.error);
+                    return;
+                }
+                addConsoleLine('✅ Upload', data.message, 'output');
+                if (data.main_file) {
+                    addConsoleLine('📌 Info', `Main file detected: ${data.main_file}`, 'output');
+                }
+                showToast('✅ ' + data.message);
+                fileInput.value = '';
+                // Reload server info
+                loadServer();
+            })
+            .catch(err => {
+                addConsoleLine('❌ Error', err.message, 'error');
+                showToast('❌ ' + err.message);
+            });
+        }
+
+        function clearConsole() {
+            document.getElementById('consoleContainer').innerHTML = '';
+            addConsoleLine('🗑 System', 'Console cleared!', 'warning');
+        }
+
+        function goBack() {
+            window.location.href = '/dashboard';
+        }
+
+        function showToast(message) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        // Load
+        loadServer();
+    </script>
+</body>
+</html>
